@@ -1,0 +1,23 @@
+{
+  "name": "clg-me",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Varad-byte/CarePath#readme",
+  "bugs": {
+    "url": "https://github.com/Varad-byte/CarePath/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Varad-byte/CarePath.git"
+  },
+  "license": "ISC",
+  "author": "Varad Kharad",
+  "type": "commonjs",
+  "main": "auth-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
