@@ -1,5 +1,12 @@
+// Auth Check: Redirect to login if no user is found
+if (!localStorage.getItem('carepath_user')) {
+    window.location.href = 'login.html';
+}
 
-
+function handleLogout() {
+    localStorage.removeItem('carepath_user');
+    window.location.href = 'login.html';
+}
 
 const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
 const todayFormatted = new Date().toLocaleDateString('en-US', dateOptions);
@@ -121,6 +128,12 @@ function nextMyth() {
 
 window.addEventListener('DOMContentLoaded', () => {
     restoreHabits();
+
+    const loggedInUser = localStorage.getItem('carepath_user');
+    if (loggedInUser) {
+        const authBtn = document.getElementById('authNavBtn');
+        if (authBtn) authBtn.innerText = `👤 ${loggedInUser.split('@')[0]}`;
+    }
 });
 
 
@@ -133,52 +146,11 @@ window.addEventListener('DOMContentLoaded', () => {
 // Backend Server URL
 const BACKEND_URL = 'http://localhost:3000';
 
-//  sign up function
-async function handleSignup() {
-    const email = prompt("Enter your email for Signup:");
-    const password = prompt("Enter your password:");
-
-    if (!email || !password) return alert("Email and password are required!");
-
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/signup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email, password: password })
-        });
-
-        const data = await response.json();
-        alert(data.message || data.error);
-    } catch (error) {
-        alert("Backend server is not running! Start 'node auth-server.js' first.");
-    }
+// Redirect to auth page
+function handleSignup() {
+    window.location.href = 'auth.html';
 }
 
-// --- LOGIN FUNCTION ---
-async function handleLogin() {
-    const email = prompt("Enter your email for Login:");
-    const password = prompt("Enter your password:");
-
-    if (!email || !password) return alert("Email and password are required!");
-
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email, password: password })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            alert(data.message);
-            // Change button in navbar to show logged-in state
-            const authBtn = document.getElementById('authNavBtn');
-            if (authBtn) authBtn.innerText = `👤 ${email.split('@')[0]}`;
-        } else {
-            alert(data.error); // "Wrong password!" or "User not found!"
-        }
-    } catch (error) {
-        alert("Backend server is not running! Start 'node auth-server.js' first.");
-    }
+function handleLogin() {
+    window.location.href = 'auth.html';
 }
