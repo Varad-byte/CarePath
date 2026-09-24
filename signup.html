@@ -339,6 +339,11 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // Save health profile locally for the Profile page
+                    localStorage.setItem('carepath_health_profile', JSON.stringify({
+                        email, age, gender, currentDisease, startDate, prevDiseases
+                    }));
+
                     btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Account Created!';
                     btn.style.background = '#10b981';
                     showAlert('Redirecting to log in...', 'success');
