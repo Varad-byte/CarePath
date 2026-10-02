@@ -132,25 +132,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const loggedInUser = localStorage.getItem('carepath_user');
     if (loggedInUser) {
         const authBtn = document.getElementById('authNavBtn');
-        if (authBtn) authBtn.innerText = `👤 ${loggedInUser.split('@')[0]}`;
+        if (authBtn) {
+            const userName = loggedInUser.split('@')[0];
+            const capitalized = userName.charAt(0).toUpperCase() + userName.slice(1);
+            authBtn.innerHTML = `<i class="bi bi-person-circle me-1"></i> ${capitalized}`;
+        }
     }
-});
-
-
-
-
-// backend: sign in (login) , sign up
-
-
-
-// Backend Server URL
-const BACKEND_URL = 'http://localhost:3000';
-
-// Redirect to auth page
-function handleSignup() {
-    window.location.href = 'auth.html';
-}
-
-function handleLogin() {
-    window.location.href = 'auth.html';
-}
+});

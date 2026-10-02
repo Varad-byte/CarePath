@@ -39,24 +39,19 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">
+                        <a class="nav-link active" aria-current="page" href="index.html">
                             <i class="bi bi-house-door"></i> Home
                         </a>
                     </li>
-                    <li class="nav-item ms-lg-2">
-                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3 mt-1" onclick="handleLogout()" id="logoutBtn">
-                            <i class="bi bi-box-arrow-left"></i> Log Out
-                        </button>
-                    </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#symptom-checker">
+                        <a class="nav-link" href="symptoms.html">
                             <i class="bi bi-activity"></i> Symptom Checker
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#reports">
+                        <a class="nav-link" href="results.html">
                             <i class="bi bi-file-earmark-medical"></i> Reports
                         </a>
                     </li>
@@ -64,6 +59,14 @@
                         <a class="nav-link" href="#about">
                             <i class="bi bi-info-circle"></i> About
                         </a>
+                    </li>
+                    <li class="nav-item ms-lg-3 d-flex align-items-center gap-2">
+                        <span class="small fw-bold text-success px-2 py-1 bg-light border rounded-pill" id="authNavBtn">
+                            <i class="bi bi-person-circle me-1"></i> Patient
+                        </span>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="handleLogout()" id="logoutBtn">
+                            <i class="bi bi-box-arrow-left"></i> Log Out
+                        </button>
                     </li>
                 </ul>
             </div>
@@ -98,10 +101,10 @@
                         </p>
                     </div>
                     <div>
-                        <button class="btn-green" type="button">
+                        <a href="symptoms.html" class="btn-green text-decoration-none">
                             <span>Check Symptoms</span>
                             <i class="bi bi-arrow-right"></i>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -119,10 +122,10 @@
                         </p>
                     </div>
                     <div>
-                        <button class="btn-white" type="button">
+                        <a href="results.html" class="btn-white text-decoration-none">
                             <span>View Medical Report</span>
                             <i class="bi bi-arrow-right"></i>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
