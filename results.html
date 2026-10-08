@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarePath — Health Assessment Results</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Project Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Healthcare Navbar (no-print) -->
+    <nav class="navbar navbar-expand-lg main-navbar sticky-top no-print">
+        <div class="container-fluid px-lg-5">
+            <a class="navbar-brand" href="index.html">
+                <span class="brand-icon">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                </span>
+                <span>CarePath</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                            <i class="bi bi-house-door"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="symptoms.html">
+                            <i class="bi bi-activity"></i> Symptom Checker
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="results.html">
+                            <i class="bi bi-file-earmark-medical"></i> Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#about">
+                            <i class="bi bi-info-circle"></i> About
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-3 d-flex align-items-center gap-2">
+                        <span class="small fw-bold text-success px-2 py-1 bg-light border rounded-pill" id="authNavBtn">
+                            <i class="bi bi-person-circle me-1"></i> Patient
+                        </span>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="handleLogout()" id="logoutBtn">
+                            <i class="bi bi-box-arrow-left"></i> Log Out
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="container py-4 my-2 px-lg-5">
+
+        <!-- Error State Container (Shown if user accesses results directly without taking assessment) -->
+        <div id="noDataContainer" class="text-center py-5 d-none">
+            <div class="mb-3">
+                <i class="bi bi-clipboard-x text-warning" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-2">No Symptom Assessment Found</h3>
+            <p class="text-muted small max-w-700 mx-auto mb-4">
+                Please complete the symptom assessment first before viewing your results and medical report.
+            </p>
+            <a href="symptoms.html" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow">
+                <i class="bi bi-activity me-1"></i> Go to Symptom Checker
+            </a>
+        </div>
+
+        <!-- Assessment Results View -->
+        <div id="resultsContainer">
+
+            <!-- Printable Header (Visible only when printing) -->
+            <div class="print-only mb-4 pb-3 border-bottom d-none">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="fw-bold text-success mb-0"><i class="bi bi-heart-pulse-fill"></i> CarePath Healthcare System</h2>
+                        <p class="text-muted small mb-0">Official Clinical Symptom Assessment Report</p>
+                    </div>
+                    <div class="text-end">
+                        <span class="fw-bold d-block" id="printReportDate">Date: --</span>
+                        <span class="text-muted small" id="printReportPatient">Patient: --</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Header (Screen) -->
+            <div class="border-bottom pb-3 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3 no-print">
+                <div>
+                    <span class="current-date-badge mb-1">
+                        <i class="bi bi-file-earmark-medical"></i> Assessment Summary
+                    </span>
+                    <h2 class="page-heading mb-1">Your Health Assessment</h2>
+                    <p class="text-muted small mb-0">Based on the symptoms you selected</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-outline-success rounded-pill px-3 fw-bold btn-sm" onclick="openReportModal()">
+                        <i class="bi bi-file-earmark-text me-1"></i> Generate Report
+                    </button>
+                    <button class="btn btn-outline-secondary rounded-pill px-3 fw-bold btn-sm" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print Report
+                    </button>
+                    <a href="symptoms.html" class="btn btn-success rounded-pill px-3 fw-bold btn-sm shadow-sm">
+                        <i class="bi bi-arrow-repeat me-1"></i> Check Again
+                    </a>
+                </div>
+            </div>
+
+            <!-- Urgent Medical Warning Banner (Shown if High Risk or Severe Symptoms) -->
+            <div id="urgentWarningBox" class="alert alert-danger border-2 border-danger rounded-4 p-3 mb-4 d-none">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-exclamation-triangle-fill fs-1 text-danger flex-shrink-0"></i>
+                    <div>
+                        <h5 class="fw-bold text-danger mb-1">Emergency Medical Notice</h5>
+                        <p class="mb-0 small fw-semibold text-danger">
+                            If you are experiencing severe chest pain, fainting, rapidly worsening breathing difficulty, or emergency symptoms, seek urgent medical attention or contact local emergency services immediately.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+
+                <!-- Left Column: Top Disease Matches -->
+                <div class="col-lg-7">
+
+                    <!-- Educational Priority / Risk Card -->
+                    <div class="content-card mb-4 bg-white border rounded-4 p-4 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0">
+                                <i class="bi bi-shield-exclamation text-primary me-2"></i> Educational Priority Level
+                            </h5>
+                            <span id="riskBadgeEl" class="risk-badge risk-low">LOW</span>
+                        </div>
+                        <p class="text-muted small mb-0" id="riskDescriptionEl">
+                            Based on your reported symptom combination, your overall triage indicator is categorized below. This is an educational screening aid.
+                        </p>
+                    </div>
+
+                    <!-- Possible Conditions Section -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="fw-bold text-dark mb-0">Possible Conditions</h4>
+                            <span class="badge bg-light text-muted border rounded-pill px-3 py-2 small">
+                                Sorted by Symptom Match %
+                            </span>
+                        </div>
+
+                        <div id="diseaseMatchesList" class="d-flex flex-column gap-3">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Clinical Disclaimer Box -->
+                    <div class="alert alert-warning border-0 rounded-4 p-3 small mb-4">
+                        <i class="bi bi-info-circle-fill text-warning me-1 fs-5"></i>
+                        <strong>Clinical Disclaimer:</strong> CarePath is an educational health aid and does not replace professional clinical diagnosis. These results represent statistical symptom matches derived from dataset observations, not a confirmed medical diagnosis. Always consult a licensed healthcare professional for medical advice.
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Selected & Answered Symptoms -->
+                <div class="col-lg-5">
+
+                    <!-- 1. Symptoms You Selected -->
+                    <div class="content-card mb-4 bg-white border rounded-4 p-4 shadow-sm">
+                        <h5 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
+                            <i class="bi bi-check2-circle text-success fs-4"></i> Symptoms You Selected
+                        </h5>
+                        <div id="selectedSymptomsList" class="d-flex flex-wrap gap-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- 2. Required Symptoms Answered -->
+                    <div class="content-card mb-4 bg-white border rounded-4 p-4 shadow-sm">
+                        <h5 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
+                            <i class="bi bi-patch-check text-primary fs-4"></i> Required Questions Summary
+                        </h5>
+                        <div id="requiredSummaryList" class="d-flex flex-column gap-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Navigation Action Buttons (Screen) -->
+                    <div class="content-card bg-white border rounded-4 p-3 text-center no-print">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success fw-bold py-2 rounded-3 shadow-sm" onclick="openReportModal()">
+                                <i class="bi bi-file-earmark-text me-1"></i> View Full Health Report
+                            </button>
+                            <a href="symptoms.html" class="btn btn-outline-success fw-bold py-2 rounded-3">
+                                <i class="bi bi-arrow-repeat me-1"></i> Check Symptoms Again
+                            </a>
+                            <a href="index.html" class="btn btn-light text-muted fw-bold py-2 rounded-3 border">
+                                <i class="bi bi-house me-1"></i> Back to Home
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Full Health Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title fw-bold text-dark" id="reportModalLabel">
+                        <i class="bi bi-file-earmark-medical-fill text-success me-2"></i> CarePath Health Assessment Report
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="reportModalBody">
+                    <!-- Dynamic Report Content -->
+                </div>
+                <div class="modal-footer bg-light border-top no-print">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-success rounded-pill px-3 fw-bold" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer (no-print) -->
+    <footer class="main-footer text-center no-print mt-5">
+        <div class="container">
+            <p class="mb-1 fw-semibold text-dark">CarePath Healthcare System &copy; 2026</p>
+            <p class="small text-muted mb-0">Built with HTML, CSS, JavaScript, and Bootstrap 5</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Results & Matching Engine Logic -->
+    <script>
+        // Auth Guard Check
+        if (!localStorage.getItem('carepath_user')) {
+            window.location.href = 'login.html';
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('carepath_user');
+            window.location.href = 'login.html';
+        }
+
+        // CSV Dataset embedded fallback & dynamic parser
+        const EMBEDDED_DATASET_CSV = `Disease,arm pain,burning chest pain,chest pain,chest tightness,cough,decreased heart rate,difficulty breathing,dizziness,fainting,fatigue,feeling ill,fluid retention,increased heart rate,irregular heartbeat,leg swelling,nausea,palpitations,sharp chest pain,shortness of breath,sweating,weakness,weight gain
+Angina,1,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,1,1,1,1,0,0
+Angina,0,1,1,1,0,0,0,0,0,0,1,0,0,0,1,0,1,1,1,0,1,0
+Angina,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,1,1,1,0,1,0
+Angina,0,1,1,1,0,0,0,1,0,0,1,0,0,0,0,0,0,1,1,0,1,0
+Angina,1,1,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,1,0,1,1,0
+Angina,1,0,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0,1,1,1,0,0
+Angina,0,1,1,1,0,0,0,0,1,0,1,0,0,0,0,0,1,1,1,1,1,0
+Angina,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0
+Angina,1,1,1,1,0,0,1,0,0,1,1,0,0,0,0,0,1,1,0,1,1,0
+Angina,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,1,0
+Angina,1,1,1,0,0,0,0,1,0,0,1,0,0,0,1,0,0,1,1,1,0,0
+Heart Attack,1,1,1,1,0,0,1,1,0,1,1,0,0,0,1,0,1,1,1,1,1,1
+Heart Attack,1,0,1,1,0,0,1,1,1,1,1,0,0,1,1,0,0,1,1,1,1,1
+Heart Attack,1,1,0,1,0,0,1,1,1,1,1,0,0,0,1,0,1,1,1,1,1,0
+Heart Attack,1,1,1,0,0,0,1,1,0,1,1,0,0,1,1,0,1,1,1,1,0,1
+Heart Attack,1,1,1,1,0,0,1,1,1,0,1,0,0,0,1,0,1,1,1,1,1,0
+Heart Attack,1,0,1,1,0,0,1,1,0,1,1,0,0,1,1,0,1,1,1,1,1,1
+Heart Attack,1,1,1,1,0,0,1,1,1,1,1,0,0,0,1,0,0,1,1,1,1,0
+Heart Attack,1,1,1,0,0,0,1,1,1,1,1,0,0,0,1,0,1,1,1,1,1,0
+Heart Attack,1,1,1,1,0,0,1,1,1,1,1,0,0,0,1,0,1,1,1,1,1,0
+Heart Attack,1,1,0,1,0,0,0,0,1,0,0,0,1,1,0,1,0,1,1,1,0,0
+Heart Attack,1,1,1,1,0,0,1,1,0,1,1,0,0,0,1,0,1,1,1,1,1,1
+Heart Failure,0,0,0,0,0,0,1,0,0,0,1,1,1,0,0,1,0,0,0,1,0,1
+Heart Failure,0,0,0,0,1,0,1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,1
+Heart Failure,0,0,0,0,1,0,1,0,0,0,1,1,1,0,1,1,0,0,0,1,0,1
+Heart Failure,0,0,0,0,1,0,1,0,1,0,1,1,1,0,0,1,0,0,0,1,0,1
+Heart Failure,0,0,0,0,1,0,1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,1
+Heart Failure,0,0,0,0,1,0,1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,1
+Heart Failure,0,0,0,0,1,0,1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,1
+Heart Failure,0,0,0,0,1,0,1,0,0,0,1,1,1,0,0,1,0,0,0,1,0,1
+Heart Failure,0,0,0,0,1,0,1,0,0,0,1,1,1,0,0,1,0,0,0,1,0,1
+Heart Failure,0,0,0,1,1,0,1,0,0,1,0,1,0,0,1,0,1,0,1,0,1,1
+Heart Failure,0,0,0,0,1,0,1,0,0,0,1,1,1,0,1,1,0,0,0,1,0,1
+Hypertensive Heart Disease,0,0,1,1,0,0,0,1,0,0,1,0,0,1,1,0,0,1,0,1,1,1
+Hypertensive Heart Disease,0,0,1,1,0,0,1,0,1,0,1,0,0,1,1,0,0,1,0,1,1,1
+Hypertensive Heart Disease,0,0,1,1,0,0,0,1,1,0,0,0,0,1,1,0,0,1,0,1,0,1
+Hypertensive Heart Disease,0,0,1,0,0,0,0,0,1,0,1,0,0,1,1,0,0,1,0,1,0,1
+Hypertensive Heart Disease,0,0,1,0,0,0,1,0,1,0,1,0,0,1,1,0,0,1,0,1,0,1
+Hypertensive Heart Disease,0,0,1,1,0,0,0,0,0,0,1,0,0,1,1,0,0,1,0,1,0,1
+Hypertensive Heart Disease,0,0,0,1,0,0,0,1,1,0,1,0,0,1,1,0,0,1,0,1,0,1
+Hypertensive Heart Disease,0,0,1,1,0,0,1,0,1,0,1,0,0,1,1,0,0,1,0,1,0,1
+Hypertensive Heart Disease,0,0,1,1,0,0,0,0,1,0,1,0,0,1,1,0,0,1,0,1,0,1
+Hypertensive Heart Disease,0,0,1,1,0,0,0,1,1,0,1,0,0,1,1,0,0,1,0,1,0,1
+Hypertensive Heart Disease,0,0,1,1,0,0,1,1,0,1,0,0,0,1,1,0,1,0,1,0,1,0
+Sinus Bradycardia,0,0,0,0,0,1,1,0,0,1,1,0,0,0,1,0,0,1,0,1,0,1
+Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,0,0,1
+Sinus Bradycardia,0,0,0,0,0,1,1,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1
+Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,0,0,0,0,1,0,0,1,0,1,0,1
+Sinus Bradycardia,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,0,0,1,0,0,0,1
+Sinus Bradycardia,0,0,0,0,0,1,0,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1
+Sinus Bradycardia,0,0,0,0,0,1,1,0,1,0,1,0,0,0,1,0,0,1,0,0,0,1
+Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1
+Sinus Bradycardia,0,0,0,1,0,1,0,1,1,1,1,0,0,1,0,0,1,0,1,0,1,0
+Sinus Bradycardia,0,0,0,0,0,1,1,0,0,1,1,0,0,0,1,0,0,1,0,0,0,1
+Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1`;
+
+        // Required symptoms list reference
+        const REQUIRED_SYMPTOMS_LIST = [
+            "chest pain", "chest tightness", "shortness of breath", 
+            "difficulty breathing", "fainting", "palpitations"
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const loggedInUser = localStorage.getItem('carepath_user');
+            if (loggedInUser) {
+                const authBtn = document.getElementById('authNavBtn');
+                if (authBtn) {
+                    const userName = loggedInUser.split('@')[0];
+                    authBtn.innerHTML = `<i class="bi bi-person-circle me-1"></i> ${userName.charAt(0).toUpperCase() + userName.slice(1)}`;
+                }
+            }
+
+            loadAndProcessResults();
+        });
+
+        async function loadAndProcessResults() {
+            const rawSymptoms = localStorage.getItem('carepath_symptoms');
+            if (!rawSymptoms) {
+                document.getElementById('resultsContainer').classList.add('d-none');
+                document.getElementById('noDataContainer').classList.remove('d-none');
+                return;
+            }
+
+            const symptomsData = JSON.parse(rawSymptoms);
+            const assessmentDate = localStorage.getItem('carepath_assessment_date') || new Date().toISOString();
+            const userEmail = localStorage.getItem('carepath_user') || 'Patient';
+
+            // 1. Extract YES symptoms and Required summary
+            const selectedYesSymptoms = [];
+            const requiredSummary = [];
+
+            for (const [key, val] of Object.entries(symptomsData)) {
+                if (val === true) {
+                    selectedYesSymptoms.push(key);
+                }
+                if (REQUIRED_SYMPTOMS_LIST.includes(key)) {
+                    requiredSummary.push({
+                        key: key,
+                        name: capitalizeWords(key),
+                        answered: val
+                    });
+                }
+            }
+
+            // Render Selected Symptoms List
+            const selectedListEl = document.getElementById('selectedSymptomsList');
+            selectedListEl.innerHTML = '';
+            if (selectedYesSymptoms.length === 0) {
+                selectedListEl.innerHTML = '<span class="text-muted small italic">No active symptoms were selected.</span>';
+            } else {
+                selectedYesSymptoms.forEach(s => {
+                    const pill = document.createElement('span');
+                    pill.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-6';
+                    pill.innerHTML = `<i class="bi bi-check-lg me-1"></i> ${capitalizeWords(s)}`;
+                    selectedListEl.appendChild(pill);
+                });
+            }
+
+            // Render Required Questions Summary
+            const requiredListEl = document.getElementById('requiredSummaryList');
+            requiredListEl.innerHTML = '';
+            requiredSummary.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'd-flex justify-content-between align-items-center p-2 rounded bg-light border-bottom small';
+                const ansBadge = item.answered === true 
+                    ? '<span class="badge bg-danger text-white"><i class="bi bi-check-circle me-1"></i> Yes</span>'
+                    : '<span class="badge bg-secondary text-white"><i class="bi bi-x-circle me-1"></i> No</span>';
+                row.innerHTML = `<span class="fw-semibold text-dark"><span class="required-star">★</span> ${item.name}</span> ${ansBadge}`;
+                requiredListEl.appendChild(row);
+            });
+
+            // 2. Fetch or Parse CSV dataset
+            let csvText = EMBEDDED_DATASET_CSV;
+            try {
+                const response = await fetch('heart_disease_binary_dataset_alphabetical (1).csv');
+                if (response.ok) {
+                    csvText = await response.text();
+                }
+            } catch (err) {
+                console.log("Using embedded dataset fallback.");
+            }
+
+            const diseaseMatches = calculateMatches(csvText, selectedYesSymptoms);
+
+            // 3. Render Top Disease Matches
+            renderDiseaseMatches(diseaseMatches);
+
+            // 4. Calculate Risk / Triage Level
+            const riskLevel = calculateRiskLevel(selectedYesSymptoms, diseaseMatches);
+            renderRiskSection(riskLevel, selectedYesSymptoms);
+
+            // Save report data for printable modal
+            saveReportData(userEmail, assessmentDate, selectedYesSymptoms, requiredSummary, diseaseMatches, riskLevel);
+        }
+
+        function calculateMatches(csvContent, userYesSymptoms) {
+            const lines = csvContent.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length <= 1) return [];
+
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const symptomColumns = headers.slice(1);
+
+            // Group rows by Disease name
+            const diseaseGroups = {};
+
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',').map(c => c.trim());
+                const diseaseName = cols[0];
+                if (!diseaseName) continue;
+
+                if (!diseaseGroups[diseaseName]) {
+                    diseaseGroups[diseaseName] = [];
+                }
+
+                // Map 1s to symptoms
+                const recordSymptoms = [];
+                for (let j = 1; j < cols.length; j++) {
+                    if (cols[j] === '1') {
+                        recordSymptoms.push(symptomColumns[j - 1]);
+                    }
+                }
+                diseaseGroups[diseaseName].push(recordSymptoms);
+            }
+
+            // For each disease, find best matching pattern
+            const results = [];
+
+            for (const [disease, patterns] of Object.entries(diseaseGroups)) {
+                let maxMatchPercent = 0;
+                let bestMatchingSymptoms = [];
+                let bestTotalDiseaseSymptoms = [];
+
+                patterns.forEach(patternSymptoms => {
+                    const matching = patternSymptoms.filter(s => userYesSymptoms.includes(s));
+                    let matchPct = 0;
+                    if (patternSymptoms.length > 0) {
+                        matchPct = Math.round((matching.length / patternSymptoms.length) * 100);
+                    }
+                    if (matchPct >= maxMatchPercent) {
+                        maxMatchPercent = matchPct;
+                        bestMatchingSymptoms = matching;
+                        bestTotalDiseaseSymptoms = patternSymptoms;
+                    }
+                });
+
+                results.push({
+                    disease: disease,
+                    matchPercent: maxMatchPercent,
+                    matchingSymptoms: bestMatchingSymptoms,
+                    totalSymptoms: bestTotalDiseaseSymptoms
+                });
+            }
+
+            // Sort descending by match percent
+            results.sort((a, b) => b.matchPercent - a.matchPercent);
+            return results;
+        }
+
+        function renderDiseaseMatches(matches) {
+            const container = document.getElementById('diseaseMatchesList');
+            container.innerHTML = '';
+
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="alert alert-info small">No condition matches found for the selected symptoms.</div>';
+                return;
+            }
+
+            matches.forEach((m, idx) => {
+                const card = document.createElement('div');
+                card.className = 'condition-card';
+
+                const matchingPills = m.matchingSymptoms.map(s => 
+                    `<span class="badge bg-success-subtle text-success border border-success-subtle me-1 mb-1"><i class="bi bi-check me-1"></i> ${capitalizeWords(s)}</span>`
+                ).join(' ');
+
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <span class="badge bg-light text-dark border me-2">Match Option #${idx + 1}</span>
+                            <h5 class="fw-bold text-dark d-inline mb-0">Possible Condition: ${m.disease}</h5>
+                        </div>
+                        <span class="fw-bold text-success fs-5">${m.matchPercent}% Match</span>
+                    </div>
+
+                    <div class="match-bar-bg mb-3">
+                        <div class="match-bar-fill" style="width: ${m.matchPercent}%;"></div>
+                    </div>
+
+                    <div class="mb-2">
+                        <span class="fw-bold small text-secondary d-block mb-1">Matching Symptoms (${m.matchingSymptoms.length}):</span>
+                        <div>${matchingPills || '<span class="text-muted small">None matching</span>'}</div>
+                    </div>
+
+                    <p class="text-muted small mb-0 mt-2 fst-italic" style="font-size: 0.8rem;">
+                        <i class="bi bi-shield-check me-1"></i> Educational symptom match, not a medical diagnosis.
+                    </p>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function calculateRiskLevel(selectedSymptoms, matches) {
+            const hasSevereChestPain = selectedSymptoms.includes('chest pain') || selectedSymptoms.includes('sharp chest pain');
+            const hasBreathingDifficulty = selectedSymptoms.includes('shortness of breath') || selectedSymptoms.includes('difficulty breathing');
+            const hasFainting = selectedSymptoms.includes('fainting');
+            const topMatchPct = matches.length > 0 ? matches[0].matchPercent : 0;
+
+            if ((hasSevereChestPain && (hasBreathingDifficulty || hasFainting)) || topMatchPct >= 75 || selectedSymptoms.includes('fainting')) {
+                return 'HIGH';
+            } else if (selectedSymptoms.length >= 3 || topMatchPct >= 40 || hasSevereChestPain || hasBreathingDifficulty) {
+                return 'MODERATE';
+            } else {
+                return 'LOW';
+            }
+        }
+
+        function renderRiskSection(riskLevel, selectedSymptoms) {
+            const badge = document.getElementById('riskBadgeEl');
+            const desc = document.getElementById('riskDescriptionEl');
+            const warningBox = document.getElementById('urgentWarningBox');
+
+            badge.className = `risk-badge risk-${riskLevel.toLowerCase()}`;
+            badge.innerText = `${riskLevel} PRIORITY`;
+
+            if (riskLevel === 'HIGH') {
+                desc.innerText = 'High triage priority indicated due to emergency symptoms (e.g. chest pain, shortness of breath, or fainting). Immediate clinical consultation recommended.';
+                warningBox.classList.remove('d-none');
+            } else if (riskLevel === 'MODERATE') {
+                desc.innerText = 'Moderate triage priority indicated. Multiple cardiovascular or respiratory symptoms noted. Schedule a consultation with your medical practitioner.';
+                warningBox.classList.add('d-none');
+            } else {
+                desc.innerText = 'Low triage priority indicated. Mild or limited symptom reports noted. Monitor your symptoms and maintain standard preventive wellness care.';
+                warningBox.classList.add('d-none');
+            }
+        }
+
+        function saveReportData(userEmail, dateStr, selectedSymptoms, requiredSummary, matches, riskLevel) {
+            const formattedDate = new Date(dateStr).toLocaleString('en-US', {
+                dateStyle: 'medium', timeStyle: 'short'
+            });
+
+            document.getElementById('printReportDate').innerText = `Date: ${formattedDate}`;
+            document.getElementById('printReportPatient').innerText = `Patient: ${userEmail}`;
+
+            const modalBody = document.getElementById('reportModalBody');
+            modalBody.innerHTML = `
+                <div class="border-bottom pb-3 mb-3">
+                    <h4 class="fw-bold text-success mb-1"><i class="bi bi-heart-pulse-fill"></i> CarePath Health Assessment Report</h4>
+                    <p class="text-muted small mb-0">Patient: <strong>${userEmail}</strong> | Generated: <strong>${formattedDate}</strong></p>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold text-dark border-bottom pb-2">1. Educational Priority Triage</h6>
+                    <span class="risk-badge risk-${riskLevel.toLowerCase()}">${riskLevel} PRIORITY</span>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold text-dark border-bottom pb-2">2. Reported Symptoms (YES)</h6>
+                    <div>
+                        ${selectedSymptoms.length > 0 ? selectedSymptoms.map(s => `<span class="badge bg-success-subtle text-success border border-success-subtle me-1 mb-1">${capitalizeWords(s)}</span>`).join('') : '<span class="text-muted small">No active symptoms reported.</span>'}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold text-dark border-bottom pb-2">3. Required Questions Summary</h6>
+                    <div class="row g-2">
+                        ${requiredSummary.map(r => `
+                            <div class="col-md-6">
+                                <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center small">
+                                    <span>${r.name}</span>
+                                    ${r.answered === true ? '<span class="badge bg-danger">Yes</span>' : '<span class="badge bg-secondary">No</span>'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold text-dark border-bottom pb-2">4. Dataset Symptom Match Analysis</h6>
+                    <div class="d-flex flex-column gap-2">
+                        ${matches.map(m => `
+                            <div class="p-3 border rounded bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong class="text-dark">Possible Condition: ${m.disease}</strong>
+                                    <span class="fw-bold text-success">${m.matchPercent}% Match</span>
+                                </div>
+                                <div class="small text-muted mt-1">Matching Symptoms: ${m.matchingSymptoms.map(capitalizeWords).join(', ') || 'None'}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="alert alert-warning small mb-0 rounded-3">
+                    <strong>Disclaimer:</strong> CarePath is an educational health aid and does not replace professional clinical diagnosis. If experiencing severe chest pain or emergency symptoms, contact your local emergency services immediately.
+                </div>
+            `;
+        }
+
+        function openReportModal() {
+            const modal = new bootstrap.Modal(document.getElementById('reportModal'));
+            modal.show();
+        }
+
+        function capitalizeWords(str) {
+            return str.replace(/\b\w/g, l => l.toUpperCase());
+        }
+    </script>
+</body>
+</html>
