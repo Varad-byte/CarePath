@@ -34,7 +34,7 @@ function saveUsers(users) {
 let users = loadUsers();
 
 app.post('/api/signup', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, age, gender, currentDisease, startDate, prevDiseases } = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required!" });
     }
@@ -45,9 +45,22 @@ app.post('/api/signup', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    users.push({ email, password: hashedPassword, createdAt: new Date() });
+    const newUser = {
+        email,
+        password: hashedPassword,
+        profile: {
+            age: age || null,
+            gender: gender || null,
+            currentDisease: currentDisease || null,
+            startDate: startDate || null,
+            prevDiseases: prevDiseases || null
+        },
+        createdAt: new Date()
+    };
+
+    users.push(newUser);
     saveUsers(users);
-    res.json({ message: "User registered successfully!" });
+    res.json({ message: "User registered successfully!", profile: newUser.profile });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -62,7 +75,21 @@ app.post('/api/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Wrong password!" });
 
-    res.json({ message: "Login successful! Welcome back.", email: user.email });
+    res.json({
+        message: "Login successful! Welcome back.",
+        email: user.email,
+        profile: user.profile || null
+    });
+});
+
+app.get('/api/profile', (req, res) => {
+    const email = req.query.email;
+    if (!email) {
+        return res.status(400).json({ error: "Email query parameter required" });
+    }
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ email: user.email, profile: user.profile || {} });
 });
 
 const PORT = process.env.PORT || 3000;

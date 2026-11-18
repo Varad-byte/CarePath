@@ -258,6 +258,12 @@
                     btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Success';
                     btn.style.background = '#10b981';
                     localStorage.setItem('carepath_user', email);
+                    if (data.profile) {
+                        localStorage.setItem('carepath_health_profile', JSON.stringify({
+                            email: email,
+                            ...data.profile
+                        }));
+                    }
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 800);

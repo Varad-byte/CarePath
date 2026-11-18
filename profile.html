@@ -218,28 +218,53 @@
     </footer>
 
     <script>
+        function populateProfileUI(profile) {
+            if (!profile) return;
+            if (profile.email) document.getElementById('displayEmail').innerText = profile.email;
+            document.getElementById('valAge').innerText = profile.age ? profile.age + " years" : "Not set";
+            document.getElementById('valGender').innerText = profile.gender || "Not set";
+            
+            if (profile.currentDisease) {
+                document.getElementById('valCurrentDisease').innerText = profile.currentDisease;
+            }
+            
+            if (profile.startDate) {
+                document.getElementById('startDateContainer').style.display = 'block';
+                document.getElementById('valStartDate').innerText = profile.startDate;
+            }
+            
+            if (profile.prevDiseases) {
+                document.getElementById('valPrevDiseases').innerText = profile.prevDiseases;
+            }
+        }
+
         // Load data on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load Primary Health Data from Signup
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userEmail = localStorage.getItem('carepath_user');
+            if (userEmail) {
+                document.getElementById('displayEmail').innerText = userEmail;
+            }
+
+            // Load Primary Health Data from local cache first
             const profileStr = localStorage.getItem('carepath_health_profile');
             if (profileStr) {
-                const profile = JSON.parse(profileStr);
-                
-                document.getElementById('displayEmail').innerText = profile.email || "Patient Profile";
-                document.getElementById('valAge').innerText = profile.age ? profile.age + " years" : "Not set";
-                document.getElementById('valGender').innerText = profile.gender || "Not set";
-                
-                if (profile.currentDisease) {
-                    document.getElementById('valCurrentDisease').innerText = profile.currentDisease;
-                }
-                
-                if (profile.startDate) {
-                    document.getElementById('startDateContainer').style.display = 'block';
-                    document.getElementById('valStartDate').innerText = profile.startDate;
-                }
-                
-                if (profile.prevDiseases) {
-                    document.getElementById('valPrevDiseases').innerText = profile.prevDiseases;
+                populateProfileUI(JSON.parse(profileStr));
+            }
+
+            // Sync from backend API if available
+            if (userEmail) {
+                try {
+                    const res = await fetch(`/api/profile?email=${encodeURIComponent(userEmail)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.profile) {
+                            const merged = { email: userEmail, ...data.profile };
+                            localStorage.setItem('carepath_health_profile', JSON.stringify(merged));
+                            populateProfileUI(merged);
+                        }
+                    }
+                } catch (e) {
+                    // Fall back to localStorage gracefully
                 }
             }
 
