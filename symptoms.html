@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarePath — Symptom Checker</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Project Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Category Accordion / Dropdown Container */
+        .category-accordion-item {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 18px !important;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+            transition: all 0.25s ease;
+        }
+
+        .category-accordion-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Dropdown Header Button */
+        .category-dropdown-btn {
+            width: 100%;
+            background: #ffffff;
+            border: none;
+            padding: 1.25rem 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .category-dropdown-btn:hover {
+            background-color: #f8fafc;
+        }
+
+        .category-dropdown-btn .chevron-icon {
+            font-size: 1.25rem;
+            color: #64748b;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .category-dropdown-btn[aria-expanded="true"] .chevron-icon {
+            transform: rotate(180deg);
+            color: #10b981;
+        }
+
+        .category-icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        /* Symptom Option Row */
+        .symptom-row {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .symptom-row:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .symptom-row.is-yes {
+            background-color: #f0fdf4;
+            border-color: #10b981;
+            box-shadow: 0 0 0 1px #10b981;
+        }
+
+        .symptom-row.is-no {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .symptom-row.is-required-unanswered {
+            border-left: 4px solid #ef4444;
+        }
+
+        .symptom-row.is-required-answered {
+            border-left: 4px solid #10b981;
+        }
+
+        /* Radio Buttons Pill Styling */
+        .radio-options-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .radio-options-group input[type="radio"] {
+            display: none;
+        }
+
+        .radio-label-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.45rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1.5px solid #cbd5e1;
+            color: #475569;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .radio-label-btn:hover {
+            border-color: #94a3b8;
+            background-color: #f8fafc;
+        }
+
+        .radio-options-group input[type="radio"]:checked + .radio-label-btn.btn-yes {
+            background: #10b981;
+            border-color: #10b981;
+            color: #ffffff;
+            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.28);
+        }
+
+        .radio-options-group input[type="radio"]:checked + .radio-label-btn.btn-no {
+            background: #64748b;
+            border-color: #64748b;
+            color: #ffffff;
+            box-shadow: 0 3px 10px rgba(100, 116, 139, 0.25);
+        }
+
+        .required-tag {
+            color: #dc2626;
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Healthcare Navbar -->
+    <nav class="navbar navbar-expand-lg main-navbar sticky-top">
+        <div class="container-fluid px-lg-5">
+            <a class="navbar-brand" href="index.html">
+                <span class="brand-icon">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                </span>
+                <span>CarePath</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                            <i class="bi bi-house-door"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="symptoms.html">
+                            <i class="bi bi-activity"></i> Symptom Checker
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="results.html">
+                            <i class="bi bi-file-earmark-medical"></i> Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.html">
+                            <i class="bi bi-person-circle"></i> Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#about">
+                            <i class="bi bi-info-circle"></i> About
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-3 d-flex align-items-center gap-2">
+                        <span class="small fw-bold text-success px-2 py-1 bg-light border rounded-pill" id="authNavBtn">
+                            <i class="bi bi-person-circle me-1"></i> Patient
+                        </span>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="handleLogout()" id="logoutBtn">
+                            <i class="bi bi-box-arrow-left"></i> Log Out
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container py-4 my-2 px-lg-5">
+
+        <!-- Page Header -->
+        <div class="border-bottom pb-3 mb-4">
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <span class="current-date-badge">
+                    <i class="bi bi-activity"></i> Interactive Assessment
+                </span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill" id="selectedCountBadge">
+                    0 symptoms selected
+                </span>
+            </div>
+            <h2 class="page-heading mb-1">What symptoms are you experiencing?</h2>
+            <p class="text-muted small mb-0">
+                Click on any category dropdown to open all its symptoms. Use the <strong>Yes</strong> / <strong>No</strong> radio buttons for each option.
+            </p>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="content-card mb-4 bg-white border rounded-4 p-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark small">
+                    <i class="bi bi-list-check text-success me-1"></i> Required Symptoms Progress:
+                </span>
+                <span class="fw-bold small text-secondary" id="progressLabel">0 / 6 required answered</span>
+            </div>
+            <div class="progress mb-2" style="height: 10px;">
+                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width: 0%;"></div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center small flex-wrap gap-2">
+                <span id="progressMessage" class="text-danger fw-semibold">
+                    <i class="bi bi-exclamation-circle me-1"></i> Please answer all ★ required symptoms before continuing.
+                </span>
+                <span class="text-muted" id="datasetStatusTag"><i class="bi bi-database-check text-success"></i> Dataset: Loaded</span>
+            </div>
+        </div>
+
+        <!-- Search Bar and Quick Actions -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div class="flex-grow-1 me-md-3" style="max-width: 500px;">
+                <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+                    <span class="input-group-text bg-white border-0 ps-3">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-0 py-2 fs-6 shadow-none" id="searchInput" placeholder="Search any symptom..." oninput="filterSymptoms()">
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm" onclick="setAllDropdowns(true)">
+                    <i class="bi bi-arrows-expand me-1"></i> Open All
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm" onclick="setAllDropdowns(false)">
+                    <i class="bi bi-arrows-collapse me-1"></i> Close All
+                </button>
+            </div>
+        </div>
+
+        <!-- CATEGORIES WITH DROPDOWN (Click to open all options) -->
+        <div id="categoriesContainer">
+
+            <!-- 1. Chest & Breathing Symptoms Dropdown -->
+            <div class="category-accordion-item" data-category="Chest & Breathing">
+                <button class="category-dropdown-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseChest" aria-expanded="true" aria-controls="collapseChest">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="category-icon-badge bg-danger-subtle text-danger">
+                            <i class="bi bi-lungs-fill"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">Chest & Breathing Symptoms</h5>
+                            <span class="text-muted small">6 symptoms (burning chest pain, chest pain, tightness...)</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 small fw-semibold" id="badge-chest">
+                            0 / 4 required
+                        </span>
+                        <i class="bi bi-chevron-down chevron-icon"></i>
+                    </div>
+                </button>
+
+                <div class="collapse show" id="collapseChest">
+                    <div class="p-4 pt-2 border-top bg-light-subtle">
+                        <div id="options-chest"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Heart & Circulation Symptoms Dropdown -->
+            <div class="category-accordion-item" data-category="Heart & Circulation">
+                <button class="category-dropdown-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHeart" aria-expanded="false" aria-controls="collapseHeart">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="category-icon-badge bg-danger-subtle text-danger">
+                            <i class="bi bi-heart-pulse-fill"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">Heart & Circulation Symptoms</h5>
+                            <span class="text-muted small">7 symptoms (palpitations, arm pain, heart rate...)</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 small fw-semibold" id="badge-heart">
+                            0 / 1 required
+                        </span>
+                        <i class="bi bi-chevron-down chevron-icon"></i>
+                    </div>
+                </button>
+
+                <div class="collapse" id="collapseHeart">
+                    <div class="p-4 pt-2 border-top bg-light-subtle">
+                        <div id="options-heart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. General Symptoms Dropdown -->
+            <div class="category-accordion-item" data-category="General Symptoms">
+                <button class="category-dropdown-btn" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGeneral" aria-expanded="false" aria-controls="collapseGeneral">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="category-icon-badge bg-primary-subtle text-primary">
+                            <i class="bi bi-person-exclamation"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">General Symptoms</h5>
+                            <span class="text-muted small">9 symptoms (fainting, fatigue, dizziness, cough...)</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 small fw-semibold" id="badge-general">
+                            0 / 1 required
+                        </span>
+                        <i class="bi bi-chevron-down chevron-icon"></i>
+                    </div>
+                </button>
+
+                <div class="collapse" id="collapseGeneral">
+                    <div class="p-4 pt-2 border-top bg-light-subtle">
+                        <div id="options-general"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Submit & Validation Section -->
+        <div class="content-card text-center p-4 my-4 rounded-4 bg-white border shadow-sm">
+            <div id="validationAlert" class="alert alert-warning border-0 small mb-3 rounded-3 d-inline-block px-4">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> Please answer all <span class="required-tag">★ Required</span> symptoms (Yes or No) using radio buttons to enable analysis.
+            </div>
+            <div>
+                <button type="button" id="analyzeBtn" class="btn btn-success btn-lg rounded-pill fw-bold px-5 py-3 shadow" disabled onclick="handleAnalyze()">
+                    <span>Analyze Symptoms</span>
+                    <i class="bi bi-arrow-right-short fs-4 ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer text-center">
+        <div class="container">
+            <p class="mb-1 fw-semibold text-dark">CarePath Healthcare System &copy; 2026</p>
+            <p class="small text-muted mb-0">Built with HTML, CSS, JavaScript, and Bootstrap 5</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Symptoms Logic -->
+    <script>
+        // Auth Guard Check
+        if (!localStorage.getItem('carepath_user')) {
+            window.location.href = 'login.html';
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('carepath_user');
+            window.location.href = 'login.html';
+        }
+
+        // All 22 symptoms
+        const ALL_SYMPTOMS = [
+            // Chest & Breathing
+            { key: "burning chest pain", name: "Burning Chest Pain", category: "Chest & Breathing", required: false },
+            { key: "chest pain", name: "Chest Pain", category: "Chest & Breathing", required: true },
+            { key: "chest tightness", name: "Chest Tightness", category: "Chest & Breathing", required: true },
+            { key: "difficulty breathing", name: "Difficulty Breathing", category: "Chest & Breathing", required: true },
+            { key: "sharp chest pain", name: "Sharp Chest Pain", category: "Chest & Breathing", required: false },
+            { key: "shortness of breath", name: "Shortness of Breath", category: "Chest & Breathing", required: true },
+
+            // Heart & Circulation
+            { key: "arm pain", name: "Arm Pain", category: "Heart & Circulation", required: false },
+            { key: "decreased heart rate", name: "Decreased Heart Rate", category: "Heart & Circulation", required: false },
+            { key: "fluid retention", name: "Fluid Retention", category: "Heart & Circulation", required: false },
+            { key: "increased heart rate", name: "Increased Heart Rate", category: "Heart & Circulation", required: false },
+            { key: "irregular heartbeat", name: "Irregular Heartbeat", category: "Heart & Circulation", required: false },
+            { key: "leg swelling", name: "Leg Swelling", category: "Heart & Circulation", required: false },
+            { key: "palpitations", name: "Palpitations", category: "Heart & Circulation", required: true },
+
+            // General Symptoms
+            { key: "cough", name: "Cough", category: "General Symptoms", required: false },
+            { key: "dizziness", name: "Dizziness", category: "General Symptoms", required: false },
+            { key: "fainting", name: "Fainting", category: "General Symptoms", required: true },
+            { key: "fatigue", name: "Fatigue", category: "General Symptoms", required: false },
+            { key: "feeling ill", name: "Feeling Ill", category: "General Symptoms", required: false },
+            { key: "nausea", name: "Nausea", category: "General Symptoms", required: false },
+            { key: "sweating", name: "Sweating", category: "General Symptoms", required: false },
+            { key: "weakness", name: "Weakness", category: "General Symptoms", required: false },
+            { key: "weight gain", name: "Weight Gain", category: "General Symptoms", required: false }
+        ];
+
+        // State storage:
+        // Required: key -> true | false | null
+        // Optional: key -> true | false
+        const userAnswers = {};
+        ALL_SYMPTOMS.forEach(s => {
+            userAnswers[s.key] = s.required ? null : false;
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const loggedInUser = localStorage.getItem('carepath_user');
+            if (loggedInUser) {
+                const authBtn = document.getElementById('authNavBtn');
+                if (authBtn) {
+                    const userName = loggedInUser.split('@')[0];
+                    authBtn.innerHTML = `<i class="bi bi-person-circle me-1"></i> ${userName.charAt(0).toUpperCase() + userName.slice(1)}`;
+                }
+            }
+
+            renderAllOptions();
+            updateProgress();
+        });
+
+        function escapedKey(key) {
+            return key.replace(/[^a-z0-9]/gi, '_');
+        }
+
+        // Render all symptom options inside their category dropdown
+        function renderAllOptions() {
+            const containerChest = document.getElementById('options-chest');
+            const containerHeart = document.getElementById('options-heart');
+            const containerGeneral = document.getElementById('options-general');
+
+            containerChest.innerHTML = '';
+            containerHeart.innerHTML = '';
+            containerGeneral.innerHTML = '';
+
+            ALL_SYMPTOMS.forEach(s => {
+                const row = document.createElement('div');
+                row.className = 'symptom-row';
+                row.id = `row-${escapedKey(s.key)}`;
+                row.setAttribute('data-name', s.name.toLowerCase());
+
+                const currentVal = userAnswers[s.key];
+                if (currentVal === true) row.classList.add('is-yes');
+                else if (currentVal === false) row.classList.add('is-no');
+
+                if (s.required) {
+                    if (currentVal === null) row.classList.add('is-required-unanswered');
+                    else row.classList.add('is-required-answered');
+                }
+
+                row.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <div>
+                            <span class="fw-bold text-dark fs-6">${s.name}</span>
+                            ${s.required 
+                                ? '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-0 ms-2 small fw-bold">★ Required</span>' 
+                                : '<span class="badge bg-light text-muted border rounded-pill px-2 py-0 ms-2 small">Optional</span>'}
+                        </div>
+                    </div>
+                    <div class="radio-options-group">
+                        <!-- Radio Button: YES -->
+                        <input type="radio" 
+                               name="radio-${escapedKey(s.key)}" 
+                               id="radio-yes-${escapedKey(s.key)}" 
+                               value="yes" 
+                               ${currentVal === true ? 'checked' : ''} 
+                               onchange="setAnswer('${s.key}', true)">
+                        <label for="radio-yes-${escapedKey(s.key)}" class="radio-label-btn btn-yes">
+                            <i class="bi bi-check-circle-fill"></i> Yes
+                        </label>
+
+                        <!-- Radio Button: NO -->
+                        <input type="radio" 
+                               name="radio-${escapedKey(s.key)}" 
+                               id="radio-no-${escapedKey(s.key)}" 
+                               value="no" 
+                               ${currentVal === false ? 'checked' : ''} 
+                               onchange="setAnswer('${s.key}', false)">
+                        <label for="radio-no-${escapedKey(s.key)}" class="radio-label-btn btn-no">
+                            <i class="bi bi-x-circle-fill"></i> No
+                        </label>
+                    </div>
+                `;
+
+                if (s.category === "Chest & Breathing") containerChest.appendChild(row);
+                else if (s.category === "Heart & Circulation") containerHeart.appendChild(row);
+                else containerGeneral.appendChild(row);
+            });
+        }
+
+        function setAnswer(key, value) {
+            userAnswers[key] = value;
+
+            const row = document.getElementById(`row-${escapedKey(key)}`);
+            if (row) {
+                row.classList.remove('is-yes', 'is-no', 'is-required-unanswered', 'is-required-answered');
+                if (value === true) row.classList.add('is-yes');
+                else if (value === false) row.classList.add('is-no');
+
+                const symptom = ALL_SYMPTOMS.find(s => s.key === key);
+                if (symptom && symptom.required) {
+                    if (value === null) row.classList.add('is-required-unanswered');
+                    else row.classList.add('is-required-answered');
+                }
+            }
+
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const requiredSymptoms = ALL_SYMPTOMS.filter(s => s.required);
+            const answeredRequired = requiredSymptoms.filter(s => userAnswers[s.key] !== null).length;
+            const totalRequired = requiredSymptoms.length;
+
+            const totalYesSelected = ALL_SYMPTOMS.filter(s => userAnswers[s.key] === true).length;
+
+            // Total selected count
+            document.getElementById('selectedCountBadge').innerText = `${totalYesSelected} symptom${totalYesSelected === 1 ? '' : 's'} selected`;
+
+            // Progress bar
+            const percent = Math.round((answeredRequired / totalRequired) * 100);
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            document.getElementById('progressLabel').innerText = `${answeredRequired} / ${totalRequired} required answered`;
+
+            // Category Badges
+            updateCategoryBadge("Chest & Breathing", "badge-chest");
+            updateCategoryBadge("Heart & Circulation", "badge-heart");
+            updateCategoryBadge("General Symptoms", "badge-general");
+
+            // Alerts & Button
+            const progressMsg = document.getElementById('progressMessage');
+            const validationAlert = document.getElementById('validationAlert');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            if (answeredRequired === totalRequired) {
+                progressMsg.className = 'text-success fw-bold';
+                progressMsg.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> All required symptoms answered ✓';
+                validationAlert.className = 'alert alert-success border-0 small mb-3 rounded-3 d-inline-block px-4';
+                validationAlert.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> All required questions completed! Ready for clinical analysis.';
+                analyzeBtn.removeAttribute('disabled');
+            } else {
+                progressMsg.className = 'text-danger fw-semibold';
+                progressMsg.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> Please answer all ★ required symptoms (${totalRequired - answeredRequired} remaining)`;
+                validationAlert.className = 'alert alert-warning border-0 small mb-3 rounded-3 d-inline-block px-4';
+                validationAlert.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> Please answer all <span class="required-tag">★ Required</span> symptoms (${totalRequired - answeredRequired} remaining) with radio buttons to continue.`;
+                analyzeBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        function updateCategoryBadge(category, badgeId) {
+            const req = ALL_SYMPTOMS.filter(s => s.category === category && s.required);
+            const ans = req.filter(s => userAnswers[s.key] !== null).length;
+            const yes = ALL_SYMPTOMS.filter(s => s.category === category && userAnswers[s.key] === true).length;
+            const badge = document.getElementById(badgeId);
+            if (!badge) return;
+
+            if (ans === req.length) {
+                badge.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 small fw-semibold';
+                badge.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> ${ans}/${req.length} answered &bull; ${yes} yes`;
+            } else {
+                badge.className = 'badge bg-light text-secondary border rounded-pill px-3 py-2 small fw-semibold';
+                badge.innerText = `${ans}/${req.length} required &bull; ${yes} yes`;
+            }
+        }
+
+        function setAllDropdowns(shouldOpen) {
+            const collapses = document.querySelectorAll('.category-accordion-item .collapse');
+            collapses.forEach(c => {
+                const bsCollapse = bootstrap.Collapse.getOrCreateInstance(c, { toggle: false });
+                if (shouldOpen) bsCollapse.show();
+                else bsCollapse.hide();
+            });
+        }
+
+        function filterSymptoms() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.symptom-row');
+
+            rows.forEach(r => {
+                const name = r.getAttribute('data-name');
+                if (!query || name.includes(query)) {
+                    r.style.display = 'flex';
+                } else {
+                    r.style.display = 'none';
+                }
+            });
+
+            // Automatically open dropdown if matching symptoms found
+            if (query) {
+                document.querySelectorAll('.category-accordion-item').forEach(cat => {
+                    const visibleRows = cat.querySelectorAll('.symptom-row:not([style*="display: none"])');
+                    const collapse = cat.querySelector('.collapse');
+                    if (visibleRows.length > 0 && collapse) {
+                        bootstrap.Collapse.getOrCreateInstance(collapse).show();
+                    }
+                });
+            }
+        }
+
+        function handleAnalyze() {
+            const requiredUnanswered = ALL_SYMPTOMS.filter(s => s.required && userAnswers[s.key] === null);
+            if (requiredUnanswered.length > 0) {
+                alert('Please answer all ★ required symptoms before continuing.');
+                return;
+            }
+
+            localStorage.setItem('carepath_symptoms', JSON.stringify(userAnswers));
+            localStorage.setItem('carepath_assessment_date', new Date().toISOString());
+            window.location.href = 'results.html';
+        }
+    </script>
+</body>
+
+</html>
