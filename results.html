@@ -434,6 +434,41 @@ Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1`;
             saveReportData(userEmail, assessmentDate, selectedYesSymptoms, requiredSummary, diseaseMatches, riskLevel);
         }
 
+        // Clinical Feature Importance Weights (Phase A: 1 to 5 scale)
+        const CLINICAL_WEIGHTS = {
+            // Critical Red-Flags (Weight 5)
+            'chest pain': 5,
+            'sharp chest pain': 5,
+            'shortness of breath': 5,
+            'difficulty breathing': 5,
+            'fainting': 5,
+
+            // Major Ischemic Indicators (Weight 4)
+            'burning chest pain': 4,
+            'chest tightness': 4,
+
+            // Circulatory & Hemodynamic Indicators (Weight 3)
+            'palpitations': 3,
+            'irregular heartbeat': 3,
+            'decreased heart rate': 3,
+            'increased heart rate': 3,
+            'arm pain': 3,
+            'leg swelling': 3,
+            'fluid retention': 3,
+
+            // Secondary Autonomic Symptoms (Weight 2)
+            'dizziness': 2,
+            'sweating': 2,
+
+            // General Constitutional Symptoms (Weight 1)
+            'cough': 1,
+            'fatigue': 1,
+            'feeling ill': 1,
+            'nausea': 1,
+            'weakness': 1,
+            'weight gain': 1
+        };
+
         function calculateMatches(csvContent, userYesSymptoms) {
             if (!userYesSymptoms || userYesSymptoms.length === 0) return [];
 
@@ -465,26 +500,50 @@ Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1`;
                 diseaseGroups[diseaseName].push(recordSymptoms);
             }
 
-            // For each disease, find best matching pattern using Jaccard Similarity (Intersection over Union)
+            // Phase A: Weighted Jaccard Similarity with Clinical Weights
             const results = [];
 
             for (const [disease, patterns] of Object.entries(diseaseGroups)) {
                 let maxMatchPercent = 0;
                 let bestMatchingSymptoms = [];
-                let bestTotalDiseaseSymptoms = [];
+                let bestMissingSymptoms = [];
 
                 patterns.forEach(patternSymptoms => {
                     const matching = patternSymptoms.filter(s => userYesSymptoms.includes(s));
                     if (matching.length === 0) return;
 
-                    // Jaccard similarity: Intersection / Union
-                    const unionSet = new Set([...patternSymptoms, ...userYesSymptoms]);
-                    const matchPct = Math.round((matching.length / unionSet.size) * 100);
+                    const missing = patternSymptoms.filter(s => !userYesSymptoms.includes(s));
 
-                    if (matchPct >= maxMatchPercent) {
-                        maxMatchPercent = matchPct;
+                    // Calculate weighted intersection
+                    let matchWeight = 0;
+                    matching.forEach(s => {
+                        matchWeight += (CLINICAL_WEIGHTS[s] || 1);
+                    });
+
+                    // Calculate weighted union
+                    let unionWeight = 0;
+                    const unionSet = new Set([...patternSymptoms, ...userYesSymptoms]);
+                    unionSet.forEach(s => {
+                        unionWeight += (CLINICAL_WEIGHTS[s] || 1);
+                    });
+
+                    // Weighted Jaccard Similarity
+                    let score = (matchWeight / unionWeight) * 100;
+
+                    // Clinical Contradiction Adjustment:
+                    // If this disease pattern has a critical hallmark (e.g. chest pain, breathing difficulty)
+                    // and the patient explicitly does NOT have it, apply a moderate contradiction penalty.
+                    const criticalMissing = missing.filter(s => (CLINICAL_WEIGHTS[s] || 1) >= 4);
+                    if (criticalMissing.length > 0) {
+                        score *= Math.pow(0.92, criticalMissing.length);
+                    }
+
+                    const finalScore = Math.round(score);
+
+                    if (finalScore >= maxMatchPercent) {
+                        maxMatchPercent = finalScore;
                         bestMatchingSymptoms = matching;
-                        bestTotalDiseaseSymptoms = patternSymptoms;
+                        bestMissingSymptoms = missing;
                     }
                 });
 
@@ -493,7 +552,7 @@ Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1`;
                         disease: disease,
                         matchPercent: maxMatchPercent,
                         matchingSymptoms: bestMatchingSymptoms,
-                        totalSymptoms: bestTotalDiseaseSymptoms
+                        missingSymptoms: bestMissingSymptoms
                     });
                 }
             }
@@ -532,33 +591,67 @@ Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1`;
 
             matches.forEach((m, idx) => {
                 const card = document.createElement('div');
-                card.className = 'condition-card';
+                card.className = 'condition-card mb-3';
 
-                const matchingPills = m.matchingSymptoms.map(s => 
-                    `<span class="badge bg-success-subtle text-success border border-success-subtle me-1 mb-1"><i class="bi bi-check me-1"></i> ${capitalizeWords(s)}</span>`
-                ).join(' ');
+                const matchingPills = m.matchingSymptoms.map(s => {
+                    const weight = CLINICAL_WEIGHTS[s] || 1;
+                    const starBadge = weight >= 4 ? ' <span class="text-danger fw-bold">★</span>' : '';
+                    return `<span class="badge bg-success-subtle text-success border border-success-subtle me-1 mb-1"><i class="bi bi-check me-1"></i>${capitalizeWords(s)}${starBadge}</span>`;
+                }).join(' ');
+
+                const missingPills = m.missingSymptoms && m.missingSymptoms.length > 0
+                    ? m.missingSymptoms.slice(0, 4).map(s => 
+                        `<span class="badge bg-light text-muted border me-1 mb-1"><i class="bi bi-dash me-1"></i>${capitalizeWords(s)}</span>`
+                    ).join(' ')
+                    : '<span class="text-muted small">None</span>';
+
+                let matchBadgeClass = 'text-success';
+                let barColor = '#10b981';
+                if (m.matchPercent < 25) {
+                    matchBadgeClass = 'text-secondary';
+                    barColor = '#94a3b8';
+                } else if (m.matchPercent < 45) {
+                    matchBadgeClass = 'text-warning';
+                    barColor = '#f59e0b';
+                }
 
                 card.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                         <div>
                             <span class="badge bg-light text-dark border me-2">Match Option #${idx + 1}</span>
                             <h5 class="fw-bold text-dark d-inline mb-0">Possible Condition: ${m.disease}</h5>
                         </div>
-                        <span class="fw-bold text-success fs-5">${m.matchPercent}% Match</span>
+                        <span class="fw-bold fs-5 ${matchBadgeClass}">${m.matchPercent}% Match</span>
                     </div>
 
                     <div class="match-bar-bg mb-3">
-                        <div class="match-bar-fill" style="width: ${m.matchPercent}%;"></div>
+                        <div class="match-bar-fill" style="width: ${m.matchPercent}%; background-color: ${barColor};"></div>
                     </div>
 
                     <div class="mb-2">
-                        <span class="fw-bold small text-secondary d-block mb-1">Matching Symptoms (${m.matchingSymptoms.length}):</span>
+                        <span class="fw-bold small text-secondary d-block mb-1">
+                            Matching Clinical Indicators (${m.matchingSymptoms.length}):
+                        </span>
                         <div>${matchingPills || '<span class="text-muted small">None matching</span>'}</div>
                     </div>
 
-                    <p class="text-muted small mb-0 mt-2 fst-italic" style="font-size: 0.8rem;">
-                        <i class="bi bi-shield-check me-1"></i> Educational symptom match, not a medical diagnosis.
-                    </p>
+                    ${m.missingSymptoms && m.missingSymptoms.length > 0 ? `
+                    <div class="mb-2 pt-2 border-top">
+                        <span class="small text-muted d-block mb-1">
+                            <i class="bi bi-info-circle me-1"></i> Common condition symptoms not reported by patient:
+                        </span>
+                        <div>${missingPills} ${m.missingSymptoms.length > 4 ? `<span class="small text-muted">+${m.missingSymptoms.length - 4} more</span>` : ''}</div>
+                    </div>
+                    ` : ''}
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small">
+                            <i class="bi bi-diagram-3-fill text-success me-1"></i> Weighted Clinical Similarity (Jaccard Model)
+                        </span>
+                        <span class="text-muted small fst-italic" style="font-size: 0.75rem;">
+                            Preliminary assessment
+                        </span>
+                    </div>
                 `;
 
                 container.appendChild(card);
@@ -662,7 +755,7 @@ Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1`;
                 <div class="mb-4">
                     <h6 class="fw-bold text-dark border-bottom pb-2">4. Dataset Symptom Match Analysis</h6>
                     <div class="d-flex flex-column gap-2">
-                        ${matches.map(m => `
+                        ${matches.length > 0 ? matches.map(m => `
                             <div class="p-3 border rounded bg-white">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <strong class="text-dark">Possible Condition: ${m.disease}</strong>
@@ -670,7 +763,7 @@ Sinus Bradycardia,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,1,0,1,0,1`;
                                 </div>
                                 <div class="small text-muted mt-1">Matching Symptoms: ${m.matchingSymptoms.map(capitalizeWords).join(', ') || 'None'}</div>
                             </div>
-                        `).join('')}
+                        `).join('') : '<div class="p-3 border rounded bg-success-subtle text-success small fw-semibold"><i class="bi bi-shield-check me-1"></i> No matching condition indicators found. Baseline wellness indicated.</div>'}
                     </div>
                 </div>
 
